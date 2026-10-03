@@ -1,0 +1,249 @@
+// SentinelLab database schema.
+// Enum values must match packages/types/src/index.ts.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  MEMBER
+}
+
+enum TargetEnvironment {
+  LOCAL_DEMO
+  DEVELOPMENT
+  STAGING
+  PRODUCTION
+}
+
+enum ScanStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+enum ModuleRunStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+  SKIPPED
+}
+
+enum Severity {
+  CRITICAL
+  HIGH
+  MEDIUM
+  LOW
+  INFO
+}
+
+enum Confidence {
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum FindingStatus {
+  OPEN
+  CONFIRMED
+  FALSE_POSITIVE
+  RESOLVED
+  ACCEPTED_RISK
+}
+
+enum ReportFormat {
+  MARKDOWN
+  HTML
+}
+
+model User {
+  id               String    @id @default(uuid()) @db.Uuid
+  /// Stored lowercase.
+  email            String    @unique
+  name             String
+  /// Argon2id hash. Plaintext passwords are never stored.
+  passwordHash     String
+  role             Role      @default(MEMBER)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  sessions  Session[]
+  targets   Target[]
+  scans     Scan[]
+  reports   Report[]
+  auditLogs AuditLog[]
+}
+
+model Session {
+  id         String   @id @default(uuid()) @db.Uuid
+  /// SHA-256 of the session token. The token itself only exists in the cookie.
+  tokenHash  String   @unique
+  userId     String   @db.Uuid
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+  lastSeenAt DateTime @default(now())
+  ipAddress  String?
+  userAgent  String?
+
+  @@index([userId])
+  @@index([expiresAt])
+}
+
+model Target {
+  id                       String            @id @default(uuid()) @db.Uuid
+  ownerId                  String            @db.Uuid
+  owner                    User              @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name                     String
+  description              String?
+  baseUrl                  String
+  environment              TargetEnvironment @default(DEVELOPMENT)
+  isDemo                   Boolean           @default(false)
+  enabled                  Boolean           @default(true)
+  /// Set when the owner confirms they are authorized to test this target.
+  authorizationConfirmedAt DateTime?
+  authorizationNote        String?
+  lastScanAt               DateTime?
+  createdAt                DateTime          @default(now())
+  updatedAt                DateTime          @updatedAt
+
+  scans    Scan[]
+  findings Finding[]
+
+  @@index([ownerId, createdAt])
+}
+
+model Scan {
+  id              String     @id @default(uuid()) @db.Uuid
+  targetId        String     @db.Uuid
+  target          Target     @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  requestedById   String     @db.Uuid
+  requestedBy     User       @relation(fields: [requestedById], references: [id], onDelete: Cascade)
+  status          ScanStatus @default(QUEUED)
+  /// 0 to 100.
+  progress        Int        @default(0)
+  currentModule   String?
+  /// Base URL at the time the scan was queued, so later edits do not change history.
+  targetUrl       String
+  cancelRequested Boolean    @default(false)
+  requestCount    Int?
+  error           String?
+  queuedAt        DateTime   @default(now())
+  startedAt       DateTime?
+  finishedAt      DateTime?
+
+  modules  ScanModuleRun[]
+  findings Finding[]
+  reports  Report[]
+
+  @@index([targetId, queuedAt])
+  @@index([requestedById, queuedAt])
+  @@index([status])
+}
+
+model ScanModuleRun {
+  id           String          @id @default(uuid()) @db.Uuid
+  scanId       String          @db.Uuid
+  scan         Scan            @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  name         String
+  status       ModuleRunStatus @default(PENDING)
+  findingCount Int             @default(0)
+  durationMs   Int?
+  error        String?
+  position     Int
+
+  @@unique([scanId, name])
+}
+
+model Finding {
+  id              String        @id @default(uuid()) @db.Uuid
+  scanId          String        @db.Uuid
+  scan            Scan          @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  targetId        String        @db.Uuid
+  target          Target        @relation(fields: [targetId], references: [id], onDelete: Cascade)
+  ruleId          String
+  /// Same issue on the same endpoint gets the same fingerprint in every scan.
+  fingerprint     String
+  title           String
+  type            String
+  severity        Severity
+  confidence      Confidence
+  endpoint        String
+  method          String
+  description     String
+  impact          String
+  remediation     String
+  references      String[]
+  module          String
+  status          FindingStatus @default(OPEN)
+  statusNote      String?
+  statusChangedAt DateTime?
+  createdAt       DateTime      @default(now())
+
+  evidence Evidence[]
+
+  @@unique([scanId, fingerprint])
+  @@index([targetId, status])
+  @@index([targetId, fingerprint])
+  @@index([severity, createdAt])
+  @@index([createdAt])
+}
+
+model Evidence {
+  id        String   @id @default(uuid()) @db.Uuid
+  findingId String   @db.Uuid
+  finding   Finding  @relation(fields: [findingId], references: [id], onDelete: Cascade)
+  summary   String
+  /// Redacted request: method, url, headers.
+  request   Json
+  /// Redacted response: status, headers, optional body snippet.
+  response  Json
+  createdAt DateTime @default(now())
+
+  @@index([findingId])
+}
+
+model Report {
+  id            String       @id @default(uuid()) @db.Uuid
+  scanId        String       @db.Uuid
+  scan          Scan         @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  generatedById String       @db.Uuid
+  generatedBy   User         @relation(fields: [generatedById], references: [id], onDelete: Cascade)
+  title         String
+  format        ReportFormat
+  content       String
+  createdAt     DateTime     @default(now())
+
+  @@index([scanId])
+  @@index([generatedById, createdAt])
+}
+
+model AuditLog {
+  id           String   @id @default(uuid()) @db.Uuid
+  /// Null for events without a signed-in user, such as a failed login.
+  actorId      String?  @db.Uuid
+  actor        User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action       String
+  resourceType String?
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  /// Never contains passwords, tokens or other credentials.
+  metadata     Json?
+  createdAt    DateTime @default(now())
+
+  @@index([actorId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}

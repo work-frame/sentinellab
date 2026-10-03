@@ -1,0 +1,15 @@
+{
+  "extends": "@sentinellab/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
+    "types": ["node", "jest"],
+    "paths": {
+      "@sentinellab/types": ["../../packages/types/src"],
+      "@sentinellab/security-engine": ["../../packages/security-engine/src"]
+    }
+  },
+  "include": ["src", "test"]
+}
