@@ -13,3 +13,4 @@ test-results/
 *.sql.gz
 *.dump
 .DS_Store
+apps/web/next-env.d.ts
