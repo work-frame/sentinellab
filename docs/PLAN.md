@@ -51,48 +51,31 @@ Checked on 2026-10-03 in the cloud container:
 
 ## Milestones
 
-Each milestone follows the same loop: read the existing code, make the smallest coherent change, run tests, lint, and typecheck, review the diff, then commit and push.
+Each milestone follows the same loop: read the existing code, make the smallest coherent change, run tests, lint and typecheck, review the diff, then commit and push.
 
-### 1. Foundation (in progress)
+### MVP (done)
 
-Done:
+| Milestone | Commit | Status |
+| --- | --- | --- |
+| Foundation: workspace, compose, plan | `17be10e` | Done |
+| Shared packages and passive security engine | `7a1c0f0` | Done, 58 tests |
+| API: auth, targets, scans, findings, reports, dashboard, audit | `f009936` | Done, 34 integration tests |
+| Security fix: no proxy trust by default, strict CORS | `5551258` | Done |
+| Demo targets | `1f35e84` | Done |
+| Web dashboard and Playwright tests | `957a5fa` | Done, 14 component and 7 end-to-end tests |
+| Docker images, compose stacks, CI, CodeQL, Dependabot | `bce2632` | Done |
+| Documentation | this commit | Done |
 
-- Folder layout: `apps/api`, `apps/web`, `packages/types`, `packages/config`, `infrastructure/`, `docs/`, `tests/`
-- Root `package.json` and `pnpm-workspace.yaml`
-- `.gitignore`, which blocks `.env` files, keys, and dumps
-- `.env.example` with placeholder values only
-- `docker-compose.yml` for Postgres and Redis, with ports bound to `127.0.0.1` and health checks
+### Next
 
-Still to do:
+1. **Active checks for local and development targets.** Reflected XSS, SQL error and command injection indicators using harmless marker values, sent only to targets marked `LOCAL_DEMO` or `DEVELOPMENT`. Add matching weaknesses to the demo targets.
+2. **Authorization testing.** Let a user store two test accounts for a target and compare responses for IDOR/BOLA and privilege boundaries. Needs encrypted credential storage first.
+3. **Account security.** Password reset, "sign out everywhere", optional TOTP.
+4. **Scale-out.** Redis-backed rate limit storage and a separate worker process.
+5. **CSP nonces** for the web app, to drop `'unsafe-inline'` from `script-src`.
 
-- NestJS API skeleton with a health endpoint, config validation, Helmet, and Swagger at `/api/docs`
-- Prisma schema and first migration for users, targets, scans, findings, evidence, scan modules, reports, and audit logs, with indexes
-- Next.js app shell with the navigation: Dashboard, Targets, Scans, Findings, Reports, Demo Lab, Settings
-- README, CONTRIBUTING, SECURITY, LICENSE
-- Install, build, and run the first tests, then commit as `feat: initialize SentinelLab monorepo`
+## Decisions made along the way
 
-### 2. Authentication and audit logging
-
-Registration, login, and logout. Argon2 password hashing, HTTP-only session cookies, CSRF protection, and rate limits on auth routes. Audit log entries for security events, with passwords and tokens never written to logs. Tests cover login, bad credentials, rate limits, and access to protected routes.
-
-### 3. Target management
-
-Create, edit, disable, delete, and view targets. Users must confirm authorization before a target can be scanned. URL validation blocks requests to internal networks (SSRF protection), and every query checks ownership so users can't reach each other's targets.
-
-### 4. Scan jobs
-
-Scan states: queued, running, completed, failed, cancelled. BullMQ workers run the scans, and the API reports progress, supports cancellation, and keeps a history of past scans.
-
-### 5. Security engine
-
-A separate package, `packages/security-engine`, with one module per check and a test file for each. The first checks are passive: response headers, cookie flags, CORS policy, server banners, and allowed HTTP methods. The engine normalizes findings, assigns severity, and stores evidence with secrets redacted.
-
-### 6. Findings and reports
-
-Finding list and detail pages with status changes (Open, Confirmed, False Positive, Resolved, Accepted Risk). Reports cover scope, method, findings, and remediation, and say plainly that a clean scan does not prove an app is secure.
-
-### 7. Demo lab and CI
-
-Local Docker demo targets that SentinelLab can scan, plus Playwright end-to-end tests and a GitHub Actions workflow for lint, typecheck, tests, build, and dependency audit.
-
-The details of milestones 5 and 7 get settled when work starts on them, and this file will record them then.
+- The browser calls the API directly instead of through a Next.js rewrite. The rewrite forwarded client-supplied `X-Forwarded-For` unchanged, which would have let anyone spoof their IP for rate limits and audit logs.
+- Integration tests use `prisma migrate deploy` on a dedicated `_test` database instead of `migrate reset`, so the suite never drops data.
+- Docker images install no OS packages, so they build behind restrictive networks and stay smaller.
