@@ -1,0 +1,58 @@
+# Dependencies for local development. Run the API and web app on your host
+# with `pnpm dev` (see docs/DEVELOPMENT.md) and these in Docker:
+#   docker compose -f docker-compose.dev.yml up -d
+# Every port binds to 127.0.0.1 only.
+name: sentinellab
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sentinellab}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-sentinellab}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # INTENTIONALLY VULNERABLE — LOCAL SECURITY TRAINING TARGETS
+  vulnerable-web:
+    build: ./targets/vulnerable-web
+    image: sentinellab-vulnerable-web
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "127.0.0.1:8081:8080"
+
+  vulnerable-api:
+    build: ./targets/vulnerable-api
+    image: sentinellab-vulnerable-api
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    ports:
+      - "127.0.0.1:8082:8080"
+
+volumes:
+  pgdata:
+  redisdata:

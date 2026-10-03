@@ -1,5 +1,22 @@
-# SentinelLab core services.
-# Ports bind to 127.0.0.1 only so nothing is exposed beyond your machine.
+# SentinelLab full stack for local use.
+#   cp .env.example .env   # then set POSTGRES_PASSWORD
+#   docker compose up -d --build
+#   open http://localhost:3000
+#
+# Only the web app (3000) and API (4000) are published, and only on 127.0.0.1.
+# Postgres and Redis sit on an internal network. The intentionally vulnerable
+# demo targets sit on their own internal "lab" network that only the API can
+# reach, and they have no internet access.
+name: sentinellab
+
+x-hardening: &hardening
+  init: true
+  read_only: true
+  tmpfs: [/tmp]
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  restart: unless-stopped
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -7,8 +24,6 @@ services:
       POSTGRES_USER: ${POSTGRES_USER:-sentinellab}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
       POSTGRES_DB: ${POSTGRES_DB:-sentinellab}
-    ports:
-      - "127.0.0.1:5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -16,13 +31,12 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks: [data]
     restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     command: ["redis-server", "--appendonly", "yes"]
-    ports:
-      - "127.0.0.1:6379:6379"
     volumes:
       - redisdata:/data
     healthcheck:
@@ -30,7 +44,68 @@ services:
       interval: 5s
       timeout: 3s
       retries: 10
+    networks: [data]
     restart: unless-stopped
+
+  api:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: infrastructure/docker/api.Dockerfile
+    image: sentinellab-api
+    environment:
+      NODE_ENV: production
+      API_PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-sentinellab}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-sentinellab}?schema=public
+      REDIS_URL: redis://redis:6379
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://localhost:3000}
+      # Plain HTTP on localhost. Set COOKIE_SECURE=true when serving over HTTPS.
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SWAGGER_ENABLED: ${SWAGGER_ENABLED:-true}
+      LOGIN_RATE_LIMIT: ${LOGIN_RATE_LIMIT:-10}
+      REGISTER_RATE_LIMIT: ${REGISTER_RATE_LIMIT:-5}
+      DEMO_TARGETS: vulnerable-web=http://vulnerable-web:8080/,vulnerable-api=http://vulnerable-api:8080/
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:4000:4000"
+    networks: [data, lab, edge]
+
+  web:
+    <<: *hardening
+    build:
+      context: .
+      dockerfile: infrastructure/docker/web.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4000}
+    image: sentinellab-web
+    tmpfs: [/tmp, /app/apps/web/.next/cache]
+    depends_on:
+      api: { condition: service_healthy }
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks: [edge]
+
+  # INTENTIONALLY VULNERABLE — LOCAL SECURITY TRAINING TARGETS
+  vulnerable-web:
+    <<: *hardening
+    build: ./targets/vulnerable-web
+    image: sentinellab-vulnerable-web
+    networks: [lab]
+
+  vulnerable-api:
+    <<: *hardening
+    build: ./targets/vulnerable-api
+    image: sentinellab-vulnerable-api
+    networks: [lab]
+
+networks:
+  data:
+    internal: true
+  lab:
+    internal: true
+  edge: {}
 
 volumes:
   pgdata:

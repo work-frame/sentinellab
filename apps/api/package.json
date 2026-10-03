@@ -30,6 +30,7 @@
     "class-validator": "^0.14.2",
     "cookie-parser": "^1.4.7",
     "helmet": "^8.3.0",
+    "prisma": "6.19.3",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2"
   },
@@ -43,7 +44,6 @@
     "@types/supertest": "^6.0.3",
     "eslint": "^9.39.0",
     "jest": "^30.5.2",
-    "prisma": "6.19.3",
     "supertest": "^7.1.4",
     "ts-jest": "^29.4.14",
     "typescript": "5.9.3",

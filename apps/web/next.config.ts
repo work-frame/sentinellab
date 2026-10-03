@@ -1,3 +1,4 @@
+import path from 'node:path';
 import type { NextConfig } from 'next';
 
 const apiOrigin = new URL(process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:4000').origin;
@@ -24,6 +25,9 @@ const csp = [
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // Trace files from the monorepo root so workspace packages end up in the standalone build.
+  outputFileTracingRoot: path.join(__dirname, '../..'),
+  turbopack: { root: path.join(__dirname, '../..') },
   poweredByHeader: false,
   reactStrictMode: true,
   transpilePackages: ['@sentinellab/types'],

@@ -2,14 +2,19 @@
   "name": "sentinellab",
   "private": true,
   "packageManager": "pnpm@10.28.0",
-  "engines": { "node": ">=22" },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "build": "pnpm -r --filter=./packages/* --filter=./apps/* run build",
     "lint": "pnpm -r run lint",
     "typecheck": "pnpm -r run typecheck",
     "test": "pnpm -r run test",
     "test:integration": "pnpm --filter @sentinellab/api run test:integration",
-    "db:up": "docker compose up -d postgres redis",
-    "db:migrate": "pnpm --filter @sentinellab/api exec prisma migrate deploy"
+    "db:up": "docker compose -f docker-compose.dev.yml up -d",
+    "db:migrate": "pnpm --filter @sentinellab/api run prisma:deploy",
+    "dev": "pnpm --filter @sentinellab/types --filter @sentinellab/security-engine run build && pnpm --parallel --filter @sentinellab/api --filter @sentinellab/web run dev",
+    "test:e2e": "pnpm --filter @sentinellab/e2e run test:e2e",
+    "audit": "pnpm audit --prod --audit-level high"
   }
 }

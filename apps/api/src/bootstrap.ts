@@ -26,8 +26,8 @@ export function configureApp(app: INestApplication, config: AppConfig): void {
           styleSrc: ["'self'", "'unsafe-inline'"],
           imgSrc: ["'self'", 'data:'],
           frameAncestors: ["'none'"],
-          // Only upgrade to HTTPS in production; local development runs on plain HTTP.
-          upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null,
+          // Only ask browsers to upgrade requests when the API is served over HTTPS.
+          upgradeInsecureRequests: config.cookieSecure ? [] : null,
         },
       },
       crossOriginResourcePolicy: { policy: 'same-site' },
