@@ -1,6 +1,6 @@
 # SentinelLab API image. Build from the repository root:
 #   docker build -f infrastructure/docker/api.Dockerfile -t sentinellab-api .
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -16,7 +16,7 @@ RUN pnpm --filter @sentinellab/types build \
 RUN pnpm --filter @sentinellab/api deploy --prod --legacy /out \
  && cd /out && node node_modules/prisma/build/index.js generate
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 ENV NODE_ENV=production
 WORKDIR /app
 COPY --from=build --chown=node:node /out ./

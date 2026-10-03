@@ -1,6 +1,6 @@
 # SentinelLab web image. Build from the repository root:
 #   docker build -f infrastructure/docker/web.Dockerfile --build-arg NEXT_PUBLIC_API_URL=http://localhost:4000 -t sentinellab-web .
-FROM node:22-alpine AS base
+FROM node:26-alpine AS base
 RUN corepack enable
 WORKDIR /repo
 
@@ -15,7 +15,7 @@ COPY apps/web ./apps/web
 RUN pnpm install --frozen-lockfile --filter "@sentinellab/web..."
 RUN pnpm --filter "@sentinellab/web..." run build
 
-FROM node:22-alpine AS runtime
+FROM node:26-alpine AS runtime
 ENV NODE_ENV=production NEXT_TELEMETRY_DISABLED=1 HOSTNAME=0.0.0.0 PORT=3000
 WORKDIR /app
 COPY --from=build --chown=node:node /repo/apps/web/.next/standalone ./
