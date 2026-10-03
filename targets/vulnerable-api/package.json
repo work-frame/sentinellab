@@ -1,0 +1,6 @@
+{
+  "name": "@sentinellab/target-vulnerable-api",
+  "private": true,
+  "description": "INTENTIONALLY VULNERABLE local training target for SentinelLab. Do not deploy.",
+  "scripts": { "start": "node server.js" }
+}
