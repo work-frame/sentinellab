@@ -1,0 +1,146 @@
+@import 'tailwindcss';
+
+/*
+ * SentinelLab design tokens. Dark is the default; a light theme follows the
+ * operating system preference. Severity colors keep at least 4.5:1 contrast
+ * against their tinted backgrounds in both themes.
+ */
+:root {
+  --bg: #0a0d12;
+  --panel: #10151c;
+  --panel-2: #151c25;
+  --line: #222c39;
+  --line-strong: #2f3b4b;
+  --text: #e6ebf2;
+  --muted: #8b97a8;
+  --faint: #5d6878;
+  --accent: #3ddc97;
+  --accent-ink: #04120b;
+  --danger: #ff6b6b;
+  --warn: #f5b84b;
+  --ok: #3ddc97;
+  --info: #7aa7ff;
+  --sev-critical: #ff5c8a;
+  --sev-high: #ff8a4c;
+  --sev-medium: #f5c04b;
+  --sev-low: #6fa8ff;
+  --sev-info: #9aa6b8;
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --bg: #f5f7fa;
+    --panel: #ffffff;
+    --panel-2: #f0f3f7;
+    --line: #dde3ea;
+    --line-strong: #c5cfda;
+    --text: #0f1720;
+    --muted: #546071;
+    --faint: #7d8898;
+    --accent: #0c8a58;
+    --accent-ink: #ffffff;
+    --danger: #c42b2b;
+    --warn: #a35c00;
+    --ok: #0c8a58;
+    --info: #2357c5;
+    --sev-critical: #b4124a;
+    --sev-high: #b83e05;
+    --sev-medium: #8a5d00;
+    --sev-low: #1f5ac2;
+    --sev-info: #4f5b6b;
+    color-scheme: light;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-panel: var(--panel);
+  --color-panel-2: var(--panel-2);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-danger: var(--danger);
+  --color-warn: var(--warn);
+  --color-ok: var(--ok);
+  --color-info: var(--info);
+  --color-sev-critical: var(--sev-critical);
+  --color-sev-high: var(--sev-high);
+  --color-sev-medium: var(--sev-medium);
+  --color-sev-low: var(--sev-low);
+  --color-sev-info: var(--sev-info);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, 'SFMono-Regular', 'JetBrains Mono', Menlo, Consolas, monospace;
+}
+
+html,
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Thin grid texture behind the app shell, a nod to scanner output. */
+.grid-bg {
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 32px 32px;
+  background-position: -1px -1px;
+}
+
+@utility panel {
+  @apply rounded-lg border border-line bg-panel;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn border-transparent bg-accent text-accent-ink hover:brightness-110;
+}
+@utility btn-secondary {
+  @apply btn border-line-strong bg-panel-2 text-text hover:border-muted;
+}
+@utility btn-danger {
+  @apply btn border-danger/50 bg-transparent text-danger hover:bg-danger/10;
+}
+@utility input {
+  @apply w-full rounded-md border border-line-strong bg-bg px-3 py-2 text-sm text-text placeholder:text-faint focus:border-accent focus:outline-none;
+}
+@utility label {
+  @apply mb-1 block text-xs font-medium tracking-wide text-muted uppercase;
+}
+@utility mono {
+  font-family: var(--font-mono);
+}
+
+@layer components {
+  .table {
+    @apply w-full text-left text-sm;
+  }
+  .table th {
+    @apply border-b border-line px-3 py-2 text-xs font-medium tracking-wide text-muted uppercase;
+  }
+  .table td {
+    @apply border-b border-line px-3 py-2.5 align-top;
+  }
+  .table tbody tr:hover {
+    @apply bg-panel-2;
+  }
+}
