@@ -16,16 +16,9 @@ These rules apply to every milestone:
 
 ## Where the code lives
 
-The original brief asked for a new private GitHub repo called `sentinellab`. This session can't create one. The `gh` token in the container is invalid, and the session only has access to `work-frame/Medverify-`.
+SentinelLab lives in the public repo [work-frame/sentinellab](https://github.com/work-frame/sentinellab). Work happens on `main` in small, tested commits, one or more per milestone.
 
-For now, SentinelLab lives in the `sentinellab/` folder of `work-frame/Medverify-` on the branch `claude/epic-gauss-1kyru2`. The MedVerify files stay as they are. When the new repo exists, you can move the folder into it with its history:
-
-```bash
-git subtree split --prefix=sentinellab -b sentinellab-export
-git push git@github.com:<owner>/sentinellab.git sentinellab-export:main
-```
-
-GitHub Actions only reads workflows from `.github/workflows` at the repository root. CI files in `sentinellab/.github/workflows` won't run until the move.
+The first commit started in the `sentinellab/` folder of `work-frame/Medverify-` and moved here with `git subtree split`, so its history carried over.
 
 ## Environment
 
@@ -103,8 +96,3 @@ Finding list and detail pages with status changes (Open, Confirmed, False Positi
 Local Docker demo targets that SentinelLab can scan, plus Playwright end-to-end tests and a GitHub Actions workflow for lint, typecheck, tests, build, and dependency audit.
 
 The details of milestones 5 and 7 get settled when work starts on them, and this file will record them then.
-
-## Open questions for you
-
-1. Should SentinelLab stay in this folder, or do you want to create the `sentinellab` repo yourself and start a new session with it attached?
-2. Private or public once it has its own repo? The default is private.
