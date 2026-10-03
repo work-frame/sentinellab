@@ -21,7 +21,8 @@ export class DashboardService {
       this.prisma.finding.count({ where: findingWhere }),
       this.prisma.finding.findMany({
         where: findingWhere,
-        orderBy: { createdAt: 'desc' },
+        // Newest scan first; within a scan, most severe first.
+        orderBy: [{ scan: { queuedAt: 'desc' } }, { severity: 'asc' }, { title: 'asc' }],
         take: 8,
         select: { id: true, title: true, severity: true, status: true, endpoint: true, createdAt: true, target: { select: { id: true, name: true } } },
       }),

@@ -12,12 +12,15 @@ export interface AppConfig {
   port: number;
   databaseUrl: string;
   redisUrl: string;
+  /** BullMQ key prefix; separate prefixes keep dev, test and prod queues apart on one Redis. */
+  queuePrefix: string;
   webOrigins: string[];
   cookieSecure: boolean;
   sessionTtlHours: number;
   allowRegistration: boolean;
   swaggerEnabled: boolean;
-  trustProxy: string;
+  /** Express trust proxy setting: false, or e.g. "loopback" / a CIDR list. */
+  trustProxy: string | false;
   demoTargets: DemoTargetDefinition[];
   targetPolicy: TargetPolicy;
   scanTimeoutMs: number;
@@ -77,12 +80,13 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): AppConfig {
     port: Number(env.API_PORT ?? 4000),
     databaseUrl: required(env, 'DATABASE_URL'),
     redisUrl: env.REDIS_URL ?? 'redis://localhost:6379',
+    queuePrefix: env.QUEUE_PREFIX ?? `sentinellab-${nodeEnv}`,
     webOrigins: (env.WEB_ORIGIN ?? 'http://localhost:3000').split(',').map((o) => o.trim()).filter(Boolean),
     cookieSecure: bool(env.COOKIE_SECURE, nodeEnv === 'production'),
     sessionTtlHours: Number(env.SESSION_TTL_HOURS ?? 12),
     allowRegistration: bool(env.ALLOW_REGISTRATION, true),
     swaggerEnabled: bool(env.SWAGGER_ENABLED, nodeEnv !== 'production'),
-    trustProxy: env.TRUST_PROXY ?? 'loopback',
+    trustProxy: env.TRUST_PROXY ? env.TRUST_PROXY : false,
     demoTargets,
     targetPolicy: parsePolicy([...demoHosts, env.SCANNER_PRIVATE_ALLOWLIST ?? ''].join(',')),
     scanTimeoutMs: Number(env.SCAN_REQUEST_TIMEOUT_MS ?? 10_000),

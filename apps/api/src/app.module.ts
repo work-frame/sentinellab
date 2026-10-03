@@ -27,7 +27,7 @@ import { TargetsModule } from './targets/targets.module';
     ThrottlerModule.forRoot([{ name: 'default', ttl: 60_000, limit: 300 }]),
     BullModule.forRootAsync({
       inject: [APP_CONFIG],
-      useFactory: (config: AppConfig) => ({ connection: { url: config.redisUrl, maxRetriesPerRequest: null } }),
+      useFactory: (config: AppConfig) => ({ prefix: config.queuePrefix, connection: { url: config.redisUrl, maxRetriesPerRequest: null } }),
     }),
     AuthModule,
     TargetsModule,

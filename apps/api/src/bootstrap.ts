@@ -12,6 +12,8 @@ import { CSRF_HEADER } from './common/csrf.guard';
  */
 export function configureApp(app: INestApplication, config: AppConfig): void {
   const express = app as NestExpressApplication;
+  // Off by default. Set TRUST_PROXY only when a reverse proxy you control
+  // overwrites X-Forwarded-For; otherwise clients could spoof their IP.
   express.set('trust proxy', config.trustProxy);
   express.disable('x-powered-by');
   app.setGlobalPrefix('api');
@@ -28,12 +30,22 @@ export function configureApp(app: INestApplication, config: AppConfig): void {
           upgradeInsecureRequests: config.nodeEnv === 'production' ? [] : null,
         },
       },
-      crossOriginResourcePolicy: { policy: 'same-origin' },
+      crossOriginResourcePolicy: { policy: 'same-site' },
     }),
   );
   app.use(cookieParser());
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }));
-  // No CORS: the web app reaches the API through a same-origin proxy.
+  // The browser calls the API directly, so the API sees the real client
+  // address. Only the configured web origins may read responses or send
+  // credentials; every other origin gets no CORS headers at all.
+  app.enableCors({
+    origin: config.webOrigins,
+    credentials: true,
+    methods: ['GET', 'POST', 'PATCH', 'DELETE'],
+    allowedHeaders: ['content-type', 'accept', CSRF_HEADER],
+    exposedHeaders: ['content-disposition'],
+    maxAge: 600,
+  });
 
   if (config.swaggerEnabled) {
     const doc = new DocumentBuilder()

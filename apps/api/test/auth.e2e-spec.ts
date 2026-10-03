@@ -110,6 +110,14 @@ describe('authentication', () => {
     expect(res.headers['access-control-allow-origin']).toBeUndefined();
   });
 
+  it('only grants CORS to the configured web origin', async () => {
+    const evil = await request(app.getHttpServer()).options('/api/targets').set('Origin', 'https://evil.example').set('Access-Control-Request-Method', 'POST');
+    expect(evil.headers['access-control-allow-origin']).toBeUndefined();
+    const good = await request(app.getHttpServer()).options('/api/targets').set('Origin', 'http://localhost:3000').set('Access-Control-Request-Method', 'POST');
+    expect(good.headers['access-control-allow-origin']).toBe('http://localhost:3000');
+    expect(good.headers['access-control-allow-credentials']).toBe('true');
+  });
+
   it('returns a generic body for malformed JSON', async () => {
     const res = await request(app.getHttpServer())
       .post('/api/auth/login')

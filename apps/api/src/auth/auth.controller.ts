@@ -9,6 +9,9 @@ import { LoginDto, RegisterDto } from './auth.dto';
 import { AuthService } from './auth.service';
 import { SESSION_COOKIE } from './session.guard';
 
+/** Read at request time so operators and test suites can tune the limits. */
+const envNumber = (key: string, fallback: number) => () => Number(process.env[key] ?? fallback);
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
@@ -22,9 +25,9 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 10 * 60_000 } })
+  @Throttle({ default: { limit: envNumber('REGISTER_RATE_LIMIT', 5), ttl: 10 * 60_000 } })
   @Post('register')
-  @ApiOperation({ summary: 'Create an account and start a session. Limited to 5 per 10 minutes per IP.' })
+  @ApiOperation({ summary: 'Create an account and start a session. Limited to 5 per 10 minutes per IP (REGISTER_RATE_LIMIT).' })
   async register(@Body() dto: RegisterDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, token } = await this.auth.register(dto, clientInfo(req));
     res.cookie(SESSION_COOKIE, token, this.cookieOptions());
@@ -32,10 +35,10 @@ export class AuthController {
   }
 
   @Public()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Throttle({ default: { limit: envNumber('LOGIN_RATE_LIMIT', 10), ttl: 60_000 } })
   @Post('login')
   @HttpCode(200)
-  @ApiOperation({ summary: 'Sign in. Limited to 10 attempts per minute per IP; accounts lock for 15 minutes after 10 failures.' })
+  @ApiOperation({ summary: 'Sign in. Limited to 10 attempts per minute per IP (LOGIN_RATE_LIMIT); accounts lock for 15 minutes after 10 failures.' })
   async login(@Body() dto: LoginDto, @Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const { user, token } = await this.auth.login(dto, clientInfo(req));
     res.cookie(SESSION_COOKIE, token, this.cookieOptions());
