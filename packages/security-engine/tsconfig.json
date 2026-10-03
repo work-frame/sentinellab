@@ -1,0 +1,9 @@
+{
+  "extends": "@sentinellab/config/tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "types": ["node", "jest"],
+    "paths": { "@sentinellab/types": ["../types/src"] }
+  },
+  "include": ["src", "test"]
+}
