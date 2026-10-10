@@ -13,7 +13,7 @@
   "dependencies": {
     "@sentinellab/types": "workspace:*",
     "ipaddr.js": "^2.5.0",
-    "undici": "^7.16.0"
+    "undici": "^8.11.2"
   },
   "devDependencies": {
     "@sentinellab/config": "workspace:*",
