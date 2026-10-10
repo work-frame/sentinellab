@@ -40,7 +40,7 @@
     "@types/cookie-parser": "^1.4.9",
     "@types/express": "^5.0.3",
     "@types/jest": "^30.0.0",
-    "@types/node": "^22.10.0",
+    "@types/node": "^26.6.4",
     "@types/supertest": "^6.0.3",
     "eslint": "^9.39.0",
     "jest": "^30.5.2",
