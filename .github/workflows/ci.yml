@@ -20,7 +20,7 @@ jobs:
     name: Lint, typecheck, unit tests, build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -58,7 +58,7 @@ jobs:
       TEST_DATABASE_URL: postgresql://sentinellab:ci-only-password@localhost:5432/sentinellab_test?schema=public
       REDIS_URL: redis://localhost:6379
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -96,7 +96,7 @@ jobs:
       DEMO_TARGETS: vulnerable-web=http://localhost:8081/,vulnerable-api=http://localhost:8082/
       REGISTER_RATE_LIMIT: "100"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -135,7 +135,7 @@ jobs:
     name: Dependency audit
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
@@ -148,7 +148,7 @@ jobs:
     name: Docker images build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -f infrastructure/docker/api.Dockerfile -t sentinellab-api .
       - run: docker build -f infrastructure/docker/web.Dockerfile -t sentinellab-web .
       - run: docker build -t sentinellab-vulnerable-web targets/vulnerable-web
